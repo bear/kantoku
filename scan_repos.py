@@ -21,6 +21,9 @@ from github import Github
 #TODO add issue label validation 
 #TODO add service hook validation
 
+def info(msg):
+    print(msg)
+
 def error(msg):
     print(msg, file=sys.stderr)
 
@@ -38,7 +41,7 @@ def generateHookConfig(hookDefinition):
 
     return result
 
-def checkHooks(org, repo, hookList):
+def checkHooks(org, repo, hookList, verifyOnly=False):
     hooks = []
     dupes = []
     for hItem in hookList:
@@ -54,9 +57,12 @@ def checkHooks(org, repo, hookList):
     if len(hooks) > 0:
         for hItem in hookList:
             if hItem['url'] in hooks:
-                c = generateHookConfig(hItem)
-                h = repo.create_hook('web', c, events=hItem['events'], active=True)
-                print('%s %s %s created web hook' % (org.name, repo.name, hItem['url']))
+                if verifyOnly:
+                    error('%s %s %s missing web hook' % (org.name, repo.name, hItem['url']))
+                else:
+                    c = generateHookConfig(hItem)
+                    h = repo.create_hook('web', c, events=hItem['events'], active=True)
+                    info('%s %s %s created web hook' % (org.name, repo.name, hItem['url']))
 
 
 def loadConfig(cfgFilename):
@@ -88,8 +94,9 @@ def loadConfig(cfgFilename):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', default='./kantoku.cfg')
+    parser.add_argument('-c', '--config',  default='./kantoku.cfg')
     parser.add_argument('-v', '--verbose', action='store_true')
+    parser.add_argument('-n', '--noop',    action='store_true')
 
     args = parser.parse_args()
     cfg  = loadConfig(args.config)
@@ -104,7 +111,7 @@ if __name__ == '__main__':
 
             for repo in org.get_repos():
                 if args.verbose:
-                    print('%s %s' % (org.name, repo.name))
+                    info('%s %s' % (org.name, repo.name))
 
                 if repo.name not in oItem['exclude_repos']:
-                    checkHooks(org, repo, oItem['hooks'])
+                    checkHooks(org, repo, oItem['hooks'], verifyOnly=args.noop)
