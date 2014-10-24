@@ -66,12 +66,6 @@ def checkHooks(org, repo, hookList, verifyOnly=False):
                     info('%s %s %s created web hook' % (org.name, repo.name, hItem.url))
 
 
-def loadConfig(cfgFilename):
-    filename = os.path.abspath(cfgFilename)
-    result   = Config()
-    result.fromJson(filename)
-    return result
-
 #
 # Configuration Example
 #
@@ -96,7 +90,8 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--noop',    action='store_true')
 
     args = parser.parse_args()
-    cfg  = loadConfig(args.config)
+    cfg  = Config()
+    cfg.fromJson(args.config)
 
     if cfg.auth_token is None:
         error('Unable to load configuration file %s' % args.config)

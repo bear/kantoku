@@ -78,7 +78,10 @@ class Config(dict):
         self.fromDict(r)
 
     def fromJson(self, configFilename):
-        if os.path.exists(configFilename):
-            with open(configFilename, 'r') as h:
+        filename = os.path.expanduser(configFilename)
+        filename = os.path.abspath(filename)
+
+        if os.path.exists(filename):
+            with open(filename, 'r') as h:
                 r = json.load(h)
                 self.fromDict(r)
