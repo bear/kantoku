@@ -15,8 +15,9 @@ import os, sys
 import json
 import argparse
 
+import etcd
 from github import Github
-
+from config import Config
 
 #TODO add issue label validation 
 #TODO add service hook validation
@@ -45,7 +46,7 @@ def checkHooks(org, repo, hookList, verifyOnly=False):
     hooks = []
     dupes = []
     for hItem in hookList:
-        hooks.append(hItem['url'])
+        hooks.append(hItem.url)
 
     for hook in repo.get_hooks():
         if hook.name.lower() == 'web' and hook.config['url'] in hooks:
@@ -56,23 +57,19 @@ def checkHooks(org, repo, hookList, verifyOnly=False):
 
     if len(hooks) > 0:
         for hItem in hookList:
-            if hItem['url'] in hooks:
+            if hItem.url in hooks:
                 if verifyOnly:
-                    error('%s %s %s missing web hook' % (org.name, repo.name, hItem['url']))
+                    error('%s %s %s missing web hook' % (org.name, repo.name, hItem.url))
                 else:
                     c = generateHookConfig(hItem)
-                    h = repo.create_hook('web', c, events=hItem['events'], active=True)
-                    info('%s %s %s created web hook' % (org.name, repo.name, hItem['url']))
+                    h = repo.create_hook('web', c, events=hItem.events, active=True)
+                    info('%s %s %s created web hook' % (org.name, repo.name, hItem.url))
 
 
 def loadConfig(cfgFilename):
     filename = os.path.abspath(cfgFilename)
-    result   = None
-
-    if os.path.exists(filename):
-        with open(filename, 'r') as h:
-            result = json.load(h)
-
+    result   = Config()
+    result.fromJson(filename)
     return result
 
 #
@@ -101,17 +98,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
     cfg  = loadConfig(args.config)
 
-    if cfg is None:
+    if cfg.auth_token is None:
         error('Unable to load configuration file %s' % args.config)
     else:
-        gh = Github(cfg['auth_token'])
+        gh = Github(cfg.auth_token)
 
-        for oItem in cfg['orgs']:
-            org = gh.get_organization(oItem['org'])
+        for oItem in cfg.orgs:
+            org = gh.get_organization(oItem.org)
 
             for repo in org.get_repos():
                 if args.verbose:
                     info('%s %s' % (org.name, repo.name))
 
-                if repo.name not in oItem['exclude_repos']:
-                    checkHooks(org, repo, oItem['hooks'], verifyOnly=args.noop)
+                if repo.name not in oItem.exclude_repos:
+                    checkHooks(org, repo, oItem.hooks, verifyOnly=args.noop)
