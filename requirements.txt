@@ -1,0 +1,4 @@
+PyGithub>=1.25.2
+argparse>=1.2.1
+bearlib==0.7.1
+python-etcd>=0.3.2

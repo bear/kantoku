@@ -15,9 +15,8 @@ import os, sys
 import json
 import argparse
 
-import etcd
 from github import Github, Label
-from config import Config
+from bearlib.config import Config
 
 #TODO add issue label validation 
 #TODO add service hook validation
