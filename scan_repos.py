@@ -16,7 +16,7 @@ import json
 import argparse
 
 import etcd
-from github import Github
+from github import Github, Label
 from config import Config
 
 #TODO add issue label validation 
@@ -65,6 +65,26 @@ def checkHooks(org, repo, hookList, verifyOnly=False):
                     h = repo.create_hook('web', c, events=hItem.events, active=True)
                     info('%s %s %s created web hook' % (org.name, repo.name, hItem.url))
 
+def checkLabels(org, repo, labelList, verifyOnly=False):
+    labels = []
+    dupes  = []
+    for hLabel in labelList:
+        labels.append(hLabel.name)
+
+    for label in repo.get_labels():
+            # info('%s %s %s labels wiped' % (org.name, repo.name, label.name))
+            # label.delete()
+        if label.name in labels:
+            labels.remove(label.name)
+
+    if len(labels) > 0:
+        for hLabel in labelList:
+            if hLabel.name in labels:
+                if verifyOnly:
+                    error('%s %s %s missing label' % (org.name, repo.name, hLabel.name))
+                else:
+                    h = repo.create_label(hLabel.name, hLabel.color)
+                    info('%s %s %s created label' % (org.name, repo.name, hLabel.name))
 
 #
 # Configuration Example
@@ -107,3 +127,4 @@ if __name__ == '__main__':
 
                 if repo.name not in oItem.exclude_repos:
                     checkHooks(org, repo, oItem.hooks, verifyOnly=args.noop)
+                    checkLabels(org, repo, oItem.labels, verifyOnly=args.noop)
