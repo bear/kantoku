@@ -64,6 +64,34 @@ def checkHooks(org, repo, hookList, verifyOnly=False):
                     h = repo.create_hook('web', c, events=hItem.events, active=True)
                     info('%s %s %s created web hook' % (org.name, repo.name, hItem.url))
 
+def checkServices(org, repo, serviceList, verifyOnly=False):
+    services = []
+    dupes    = []
+    for sItem in serviceList:
+        services.append(sItem.name.lower())
+
+    for service in repo.get_hooks():
+        if service.name.lower() != 'web':
+            sName = service.name.lower()
+            if sName in services:
+                services.remove(sName)
+            if sName in dupes:
+                error('%s %s %s %s duplicate service' % (org.name, repo.name, service.name, service.id))
+            dupes.append(sName)
+
+    if len(services) > 0:
+        for sItem in serviceList:
+            if sItem.name.lower() in services:
+                if verifyOnly:
+                    error('%s %s %s missing service' % (org.name, repo.name, sItem.domain))
+                else:
+                    c = { 'token': sItem.token, 
+                          'user': sItem.user, 
+                          'domain': sItem.domain 
+                        }
+                    h = repo.create_hook(sItem.name, c, events=sItem.events, active=True)
+                    info('%s %s %s created service' % (org.name, repo.name, sItem.name, sItem.domain))
+
 def checkLabels(org, repo, labelList, verifyOnly=False):
     labels = []
     dupes  = []
@@ -127,3 +155,4 @@ if __name__ == '__main__':
                 if repo.name not in oItem.exclude_repos:
                     checkHooks(org, repo, oItem.hooks, verifyOnly=args.noop)
                     checkLabels(org, repo, oItem.labels, verifyOnly=args.noop)
+                    checkServices(org, repo, oItem.services, verifyOnly=args.noop)
