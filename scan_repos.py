@@ -41,15 +41,25 @@ def generateHookConfig(hookDefinition):
 
     return result
 
-def checkHooks(org, repo, hookList, verifyOnly=False):
+# def removeHook(org, repo, foo):
+#     for hook in repo.get_hooks():
+#         if hook.name.lower() == 'web':
+#             print(org.name, repo.name, hook.name, hook.config)
+#             # repo.delete()
+#             # info('%s %s %s removed' % (org.name, repo.name, hook.config['url']))
+
+def checkHooks(org, repo, hookList, verifyOnly=False, checkNew=False):
     hooks = []
     dupes = []
     for hItem in hookList:
         hooks.append(hItem.url)
 
     for hook in repo.get_hooks():
-        if hook.name.lower() == 'web' and hook.config['url'] in hooks:
-            hooks.remove(hook.config['url'])
+        if hook.name.lower() == 'web':
+            if hook.config['url'] in hooks:
+                hooks.remove(hook.config['url'])
+            elif checkNew:
+                info('%s %s %s new web hook' % (org.name, repo.name, hook.config['url']))
         if hook.url in dupes:
             error('%s %s %s %s duplicate hook' % (org.name, repo.name, hook.name, hook.id))
         dupes.append(hook.url)
@@ -64,7 +74,7 @@ def checkHooks(org, repo, hookList, verifyOnly=False):
                     h = repo.create_hook('web', c, events=hItem.events, active=True)
                     info('%s %s %s created web hook' % (org.name, repo.name, hItem.url))
 
-def checkServices(org, repo, serviceList, verifyOnly=False):
+def checkServices(org, repo, serviceList, verifyOnly=False, checkNew=False):
     services = []
     dupes    = []
     for sItem in serviceList:
@@ -75,6 +85,8 @@ def checkServices(org, repo, serviceList, verifyOnly=False):
             sName = service.name.lower()
             if sName in services:
                 services.remove(sName)
+            elif checkNew:
+                info('%s %s %s new service' % (org.name, repo.name, hook.config['url']))
             if sName in dupes:
                 error('%s %s %s %s duplicate service' % (org.name, repo.name, service.name, service.id))
             dupes.append(sName)
@@ -92,7 +104,7 @@ def checkServices(org, repo, serviceList, verifyOnly=False):
                     h = repo.create_hook(sItem.name, c, events=sItem.events, active=True)
                     info('%s %s %s created service' % (org.name, repo.name, sItem.name, sItem.domain))
 
-def checkLabels(org, repo, labelList, verifyOnly=False):
+def checkLabels(org, repo, labelList, verifyOnly=False, checkNew=False):
     labels = []
     dupes  = []
     for hLabel in labelList:
@@ -103,7 +115,9 @@ def checkLabels(org, repo, labelList, verifyOnly=False):
             # label.delete()
         if label.name in labels:
             labels.remove(label.name)
-
+        elif checkNew:
+            info('%s %s %s new label' % (org.name, repo.name, hook.config['url']))
+ 
     if len(labels) > 0:
         for hLabel in labelList:
             if hLabel.name in labels:
@@ -135,6 +149,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--config',  default='./kantoku.cfg')
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-n', '--noop',    action='store_true')
+    parser.add_argument('--new', action='store_true')
 
     args = parser.parse_args()
     cfg  = Config()
@@ -153,6 +168,6 @@ if __name__ == '__main__':
                     info('%s %s' % (org.name, repo.name))
 
                 if repo.name not in oItem.exclude_repos:
-                    checkHooks(org, repo, oItem.hooks, verifyOnly=args.noop)
-                    checkLabels(org, repo, oItem.labels, verifyOnly=args.noop)
-                    checkServices(org, repo, oItem.services, verifyOnly=args.noop)
+                    checkHooks(org, repo, oItem.hooks, verifyOnly=args.noop, checkNew=args.new)
+                    checkLabels(org, repo, oItem.labels, verifyOnly=args.noop, checkNew=args.new)
+                    checkServices(org, repo, oItem.services, verifyOnly=args.noop, checkNew=args.new)
