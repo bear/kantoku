@@ -102,7 +102,7 @@ def checkServices(org, repo, serviceList, verifyOnly=False, checkNew=False):
                           'domain': sItem.domain 
                         }
                     h = repo.create_hook(sItem.name, c, events=sItem.events, active=True)
-                    info('%s %s %s created service' % (org.name, repo.name, sItem.name, sItem.domain))
+                    info('%s %s %s %s created service' % (org.name, repo.name, sItem.name, sItem.domain))
 
 def checkLabels(org, repo, labelList, verifyOnly=False, checkNew=False):
     labels = []
