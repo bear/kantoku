@@ -217,7 +217,7 @@ if __name__ == '__main__':
                     info('%s %s' % (org.name, repo.name))
 
                 if repo.name not in oItem.exclude_repos:
-                    # checkHooks(org, repo, oItem.hooks, verifyOnly=args.noop, checkNew=args.new)
-                    # checkLabels(org, repo, oItem.labels, verifyOnly=args.noop, checkNew=args.new)
-                    # checkServices(org, repo, oItem.services, verifyOnly=args.noop, checkNew=args.new)
+                    checkHooks(org, repo, oItem.hooks, verifyOnly=args.noop, checkNew=args.new)
+                    checkLabels(org, repo, oItem.labels, verifyOnly=args.noop, checkNew=args.new)
+                    checkServices(org, repo, oItem.services, verifyOnly=args.noop, checkNew=args.new)
                     checkFiles(org, repo, oItem.files, verifyOnly=args.noop, checkNew=args.new)
