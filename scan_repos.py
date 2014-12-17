@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """
 :copyright: (c) 2014 by Mike Taylor
@@ -13,13 +14,35 @@ from __future__ import print_function
 
 import os, sys
 import json
+import base64
 import argparse
+
+import requests
 
 from github import Github, Label
 from bearlib.config import Config
 
-#TODO add issue label validation 
-#TODO add service hook validation
+_license = """Copyright © 2014 &yet, LLC and AmpersandJS contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."""
+
 
 def info(msg):
     print(msg)
@@ -104,6 +127,32 @@ def checkServices(org, repo, serviceList, verifyOnly=False, checkNew=False):
                     h = repo.create_hook(sItem.name, c, events=sItem.events, active=True)
                     info('%s %s %s %s created service' % (org.name, repo.name, sItem.name, sItem.domain))
 
+def checkFiles(org, repo, fileList, verifyOnly=False, checkNew=False):
+    for item in fileList:
+        found = False       
+        try:
+            fileContent = repo.get_file_contents(item)
+            found       = True
+        except:
+            found = False
+
+        if not found and not verifyOnly:
+            if item.lower() == 'license.md':
+                print(repo.contents_url)
+                url     = repo.contents_url.replace('{+path}', item)
+                print(url)
+                headers = { 'Authorization': 'token %s' % cfg.auth_token }
+                payload = { 'message': 'Creating %s' % item,
+                            'content': base64.b64encode(_license)
+                          }
+
+                r = requests.put(url, data=json.dumps(payload), headers=headers)
+
+                if r.status_code == 201:
+                    print('%s %s %s missing file created' % (org.name, repo.name, item))
+                else:
+                    print('%s %s %s UNABLE to create file %s %s' % (org.name, repo.name, item, r.status_code, r.text))
+
 def checkLabels(org, repo, labelList, verifyOnly=False, checkNew=False):
     labels = []
     dupes  = []
@@ -168,6 +217,7 @@ if __name__ == '__main__':
                     info('%s %s' % (org.name, repo.name))
 
                 if repo.name not in oItem.exclude_repos:
-                    checkHooks(org, repo, oItem.hooks, verifyOnly=args.noop, checkNew=args.new)
-                    checkLabels(org, repo, oItem.labels, verifyOnly=args.noop, checkNew=args.new)
-                    checkServices(org, repo, oItem.services, verifyOnly=args.noop, checkNew=args.new)
+                    # checkHooks(org, repo, oItem.hooks, verifyOnly=args.noop, checkNew=args.new)
+                    # checkLabels(org, repo, oItem.labels, verifyOnly=args.noop, checkNew=args.new)
+                    # checkServices(org, repo, oItem.services, verifyOnly=args.noop, checkNew=args.new)
+                    checkFiles(org, repo, oItem.files, verifyOnly=args.noop, checkNew=args.new)
