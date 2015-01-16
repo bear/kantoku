@@ -91,8 +91,8 @@ def checkHooks(org, repo, hookList, verifyOnly=False, checkNew=False):
         dupes.append(hook.url)
 
     for url in hooks:
-        if repo.name in excludes[hook]:
-            hooks.remove(hook)
+        if repo.name in excludes[url]:
+            hooks.remove(url)
 
     if len(hooks) > 0:
         for hItem in hookList:
