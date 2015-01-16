@@ -13,6 +13,7 @@ Given a list of GitHub organizations, verify...
 from __future__ import print_function
 
 import os, sys
+import sets
 import json
 import base64
 import argparse
@@ -72,10 +73,12 @@ def generateHookConfig(hookDefinition):
 #             # info('%s %s %s removed' % (org.name, repo.name, hook.config['url']))
 
 def checkHooks(org, repo, hookList, verifyOnly=False, checkNew=False):
-    hooks = []
-    dupes = []
+    hooks    = []
+    dupes    = []
+    excludes = {}
     for hItem in hookList:
         hooks.append(hItem.url)
+        excludes[hItem.url] = hItem.exclude_repos
 
     for hook in repo.get_hooks():
         if hook.name.lower() == 'web':
@@ -86,6 +89,10 @@ def checkHooks(org, repo, hookList, verifyOnly=False, checkNew=False):
         if hook.url in dupes:
             error('%s %s %s %s duplicate hook' % (org.name, repo.name, hook.name, hook.id))
         dupes.append(hook.url)
+
+    for url in hooks:
+        if repo.name in excludes[hook]:
+            hooks.remove(hook)
 
     if len(hooks) > 0:
         for hItem in hookList:
@@ -100,8 +107,10 @@ def checkHooks(org, repo, hookList, verifyOnly=False, checkNew=False):
 def checkServices(org, repo, serviceList, verifyOnly=False, checkNew=False):
     services = []
     dupes    = []
+    excludes = {}
     for sItem in serviceList:
         services.append(sItem.name.lower())
+        excludes[sItem.name.lower()] = sItem.exclude_repos
 
     for service in repo.get_hooks():
         if service.name.lower() != 'web':
@@ -113,6 +122,10 @@ def checkServices(org, repo, serviceList, verifyOnly=False, checkNew=False):
             if sName in dupes:
                 error('%s %s %s %s duplicate service' % (org.name, repo.name, service.name, service.id))
             dupes.append(sName)
+
+    for service in services:
+        if repo.name in excludes[service]:
+            services.remove(service)
 
     if len(services) > 0:
         for sItem in serviceList:
